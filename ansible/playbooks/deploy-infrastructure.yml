@@ -3,50 +3,34 @@
   hosts: localhost
   connection: local
   gather_facts: false
-  vars_files:
-    - ../group_vars/all.yml
+  vars:
+    project_name: angular-automated-app
+    location: eastus
+    resource_group: "{{ project_name }}-rg"
+    acr_name: "{{ project_name | replace('-', '') }}acr"
+    app_service_plan: "{{ project_name }}-plan"
+    web_app_name: "{{ project_name }}"
   
   tasks:
     - name: Create Resource Group
-      azure.azcollection.azure_rm_resourcegroup:
-        name: "{{ resource_group }}"
-        location: "{{ location }}"
-        tags: "{{ common_tags }}"
-        state: present
+      shell: |
+        az group create --name {{ resource_group }} --location {{ location }}
 
     - name: Create Container Registry
-      azure.azcollection.azure_rm_containerregistry:
-        name: "{{ acr_name }}"
-        resource_group: "{{ resource_group }}"
-        location: "{{ location }}"
-        sku: "{{ acr_sku }}"
-        admin_user_enabled: true
-        tags: "{{ common_tags }}"
-        state: present
-      register: acr_result
+      shell: |
+        az acr create --resource-group {{ resource_group }} --name {{ acr_name }} --sku Basic --admin-enabled true
 
-    - name: Create App Service Plan (Linux)
-      azure.azcollection.azure_rm_appserviceplan:
-        name: "{{ app_service_plan }}"
-        resource_group: "{{ resource_group }}"
-        location: "{{ location }}"
-        sku: "{{ app_service_sku }}"
-        is_linux: true
-        tags: "{{ common_tags }}"
-        state: present
+    - name: Create App Service Plan
+      shell: |
+        az appservice plan create --name {{ app_service_plan }} --resource-group {{ resource_group }} --is-linux --sku B1
 
-    - name: Create Web App with Container
-      azure.azcollection.azure_rm_webapp:
-        name: "{{ web_app_name }}"
-        resource_group: "{{ resource_group }}"
-        plan: "{{ app_service_plan }}"
-        container_settings:
-          name: "nginx:alpine"
-        app_settings:
-          WEBSITES_ENABLE_APP_SERVICE_STORAGE: "false"
-          WEBSITES_PORT: "80"
-        tags: "{{ common_tags }}"
-        state: present
+    - name: Create Web App
+      shell: |
+        az webapp create --resource-group {{ resource_group }} --plan {{ app_service_plan }} --name {{ web_app_name }} --deployment-container-image-name nginx:alpine
+
+    - name: Configure Web App Settings
+      shell: |
+        az webapp config appsettings set --resource-group {{ resource_group }} --name {{ web_app_name }} --settings WEBSITES_ENABLE_APP_SERVICE_STORAGE=false WEBSITES_PORT=80
 
     - name: Display Infrastructure Info
       debug:

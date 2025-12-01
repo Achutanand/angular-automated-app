@@ -3,54 +3,33 @@
   hosts: localhost
   connection: local
   gather_facts: false
-  vars_files:
-    - ../group_vars/all.yml
+  vars:
+    project_name: angular-automated-app
+    resource_group: "{{ project_name }}-rg"
+    acr_name: "{{ project_name | replace('-', '') }}acr"
+    web_app_name: "{{ project_name }}"
+    docker_image: "{{ acr_name }}.azurecr.io/{{ project_name }}:latest"
   
   tasks:
     - name: Build Docker Image
-      community.docker.docker_image:
-        name: "{{ acr_name }}.azurecr.io/{{ project_name }}"
-        tag: latest
-        build:
-          path: ../..
-          dockerfile: Dockerfile
-        source: build
-        state: present
-
-    - name: Get ACR Credentials
-      azure.azcollection.azure_rm_containerregistry_info:
-        name: "{{ acr_name }}"
-        resource_group: "{{ resource_group }}"
-        retrieve_credentials: true
-      register: acr_info
+      shell: |
+        docker build -t {{ docker_image }} ../..
 
     - name: Login to ACR
-      community.docker.docker_login:
-        registry_url: "{{ acr_name }}.azurecr.io"
-        username: "{{ acr_info.registries[0].credentials.username }}"
-        password: "{{ acr_info.registries[0].credentials.password }}"
+      shell: |
+        az acr login --name {{ acr_name }}
 
     - name: Push Image to ACR
-      community.docker.docker_image:
-        name: "{{ acr_name }}.azurecr.io/{{ project_name }}"
-        tag: latest
-        push: true
-        source: local
+      shell: |
+        docker push {{ docker_image }}
 
     - name: Update Web App Container
-      azure.azcollection.azure_rm_webapp:
-        name: "{{ web_app_name }}"
-        resource_group: "{{ resource_group }}"
-        container_settings:
-          name: "{{ docker_image }}"
-        state: present
+      shell: |
+        az webapp config container set --name {{ web_app_name }} --resource-group {{ resource_group }} --docker-custom-image-name {{ docker_image }}
 
     - name: Start Web App
-      azure.azcollection.azure_rm_webapp:
-        name: "{{ web_app_name }}"
-        resource_group: "{{ resource_group }}"
-        state: present
-        started: true
+      shell: |
+        az webapp start --name {{ web_app_name }} --resource-group {{ resource_group }}
 
     - name: Display Deployment Info
       debug:
