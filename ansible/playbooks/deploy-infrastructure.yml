@@ -29,7 +29,7 @@
 
     - name: Create Container Instance
       shell: |
-        az container create --resource-group {{ resource_group }} --name {{ web_app_name }} --image nginx:alpine --dns-name-label {{ web_app_name }} --ports 80
+        az container create --resource-group {{ resource_group }} --name {{ web_app_name }} --image nginx:alpine --dns-name-label {{ web_app_name }} --ports 80 --os-type Linux
 
     - name: Display Infrastructure Info
       debug:
