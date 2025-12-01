@@ -16,6 +16,12 @@
       shell: |
         az group create --name {{ resource_group }} --location {{ location }}
 
+    - name: Register Azure Providers
+      shell: |
+        az provider register --namespace Microsoft.ContainerRegistry
+        az provider register --namespace Microsoft.Web
+        az provider register --namespace Microsoft.Storage
+
     - name: Create Container Registry
       shell: |
         az acr create --resource-group {{ resource_group }} --name {{ acr_name }} --sku Basic --admin-enabled true
