@@ -24,7 +24,7 @@ jobs:
     - name: Install Ansible and Dependencies
       run: |
         pip install ansible
-        pip install 'ansible[azure]'
+        pip install azure-identity azure-mgmt-resource azure-mgmt-web azure-mgmt-containerregistry azure-mgmt-storage azure-mgmt-network azure-common
         pip install azure-cli
         ansible-galaxy collection install -r ansible/requirements.yml
 
