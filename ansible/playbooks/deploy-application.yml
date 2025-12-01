@@ -1,0 +1,58 @@
+---
+- name: Build and Deploy Angular Application
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  
+  tasks:
+    - name: Build Docker Image
+      community.docker.docker_image:
+        name: "{{ acr_name }}.azurecr.io/{{ project_name }}"
+        tag: latest
+        build:
+          path: ../..
+          dockerfile: Dockerfile
+        source: build
+        state: present
+
+    - name: Get ACR Credentials
+      azure.azcollection.azure_rm_containerregistry_info:
+        name: "{{ acr_name }}"
+        resource_group: "{{ resource_group }}"
+        retrieve_credentials: true
+      register: acr_info
+
+    - name: Login to ACR
+      community.docker.docker_login:
+        registry_url: "{{ acr_name }}.azurecr.io"
+        username: "{{ acr_info.registries[0].credentials.username }}"
+        password: "{{ acr_info.registries[0].credentials.password }}"
+
+    - name: Push Image to ACR
+      community.docker.docker_image:
+        name: "{{ acr_name }}.azurecr.io/{{ project_name }}"
+        tag: latest
+        push: true
+        source: local
+
+    - name: Update Web App Container
+      azure.azcollection.azure_rm_webapp:
+        name: "{{ web_app_name }}"
+        resource_group: "{{ resource_group }}"
+        container_settings:
+          name: "{{ docker_image }}"
+        state: present
+
+    - name: Start Web App
+      azure.azcollection.azure_rm_webapp:
+        name: "{{ web_app_name }}"
+        resource_group: "{{ resource_group }}"
+        state: present
+        started: true
+
+    - name: Display Deployment Info
+      debug:
+        msg:
+          - "🚀 Application Deployed Successfully!"
+          - "Web App URL: https://{{ web_app_name }}.azurewebsites.net"
+          - "Docker Image: {{ docker_image }}"

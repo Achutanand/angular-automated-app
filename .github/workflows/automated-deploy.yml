@@ -1,0 +1,50 @@
+name: Automated Angular Deployment
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  AZURE_WEBAPP_NAME: angular-automated-app
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install Ansible and Dependencies
+      run: |
+        pip install ansible
+        ansible-galaxy collection install -r ansible/requirements.yml
+
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Setup Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Deploy Infrastructure and Application
+      run: |
+        cd ansible
+        ansible-playbook site.yml
+
+    - name: Verify Deployment
+      run: |
+        sleep 60
+        curl -f https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net || exit 1
+
+    - name: Deployment Success
+      run: |
+        echo "🎉 Deployment completed successfully!"
+        echo "🌐 Application URL: https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"

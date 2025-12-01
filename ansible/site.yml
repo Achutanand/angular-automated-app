@@ -1,0 +1,3 @@
+---
+- import_playbook: playbooks/deploy-infrastructure.yml
+- import_playbook: playbooks/deploy-application.yml

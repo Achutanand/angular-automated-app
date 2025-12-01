@@ -1,0 +1,47 @@
+# Azure DevOps Pipeline for Angular 20.3.12 Automated App
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  webAppName: 'angular-automated-app'
+
+stages:
+- stage: Deploy
+  displayName: 'Deploy Infrastructure and Application'
+  jobs:
+  - job: AnsibleDeploy
+    displayName: 'Ansible Automated Deployment'
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.11'
+      displayName: 'Setup Python'
+
+    - script: |
+        pip install ansible
+        ansible-galaxy collection install -r ansible/requirements.yml
+      displayName: 'Install Ansible and Dependencies'
+
+    - task: AzureCLI@2
+      displayName: 'Deploy with Ansible'
+      inputs:
+        azureSubscription: 'Azure-Connection'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          cd ansible
+          ansible-playbook site.yml
+
+    - task: AzureCLI@2
+      displayName: 'Verify Deployment'
+      inputs:
+        azureSubscription: 'Azure-Connection'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          sleep 60
+          curl -f https://$(webAppName).azurewebsites.net || exit 1
+          echo "🎉 Deployment successful: https://$(webAppName).azurewebsites.net"

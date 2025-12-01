@@ -1,0 +1,55 @@
+---
+- name: Deploy Complete Azure Infrastructure
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  
+  tasks:
+    - name: Create Resource Group
+      azure.azcollection.azure_rm_resourcegroup:
+        name: "{{ resource_group }}"
+        location: "{{ location }}"
+        tags: "{{ common_tags }}"
+        state: present
+
+    - name: Create Container Registry
+      azure.azcollection.azure_rm_containerregistry:
+        name: "{{ acr_name }}"
+        resource_group: "{{ resource_group }}"
+        location: "{{ location }}"
+        sku: "{{ acr_sku }}"
+        admin_user_enabled: true
+        tags: "{{ common_tags }}"
+        state: present
+      register: acr_result
+
+    - name: Create App Service Plan (Linux)
+      azure.azcollection.azure_rm_appserviceplan:
+        name: "{{ app_service_plan }}"
+        resource_group: "{{ resource_group }}"
+        location: "{{ location }}"
+        sku: "{{ app_service_sku }}"
+        is_linux: true
+        tags: "{{ common_tags }}"
+        state: present
+
+    - name: Create Web App with Container
+      azure.azcollection.azure_rm_webapp:
+        name: "{{ web_app_name }}"
+        resource_group: "{{ resource_group }}"
+        plan: "{{ app_service_plan }}"
+        container_settings:
+          name: "nginx:alpine"
+        app_settings:
+          WEBSITES_ENABLE_APP_SERVICE_STORAGE: "false"
+          WEBSITES_PORT: "80"
+        tags: "{{ common_tags }}"
+        state: present
+
+    - name: Display Infrastructure Info
+      debug:
+        msg:
+          - "✅ Infrastructure Created Successfully!"
+          - "Resource Group: {{ resource_group }}"
+          - "Container Registry: {{ acr_name }}.azurecr.io"
+          - "Web App URL: https://{{ web_app_name }}.azurewebsites.net"

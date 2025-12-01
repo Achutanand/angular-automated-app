@@ -1,0 +1,25 @@
+---
+# Project Configuration
+project_name: angular-automated-app
+environment: production
+location: eastus
+resource_group: "{{ project_name }}-rg"
+
+# Azure Container Registry
+acr_name: "{{ project_name | replace('-', '') }}acr"
+acr_sku: Basic
+
+# App Service
+app_service_plan: "{{ project_name }}-plan"
+app_service_sku: B1
+web_app_name: "{{ project_name }}"
+
+# Docker
+docker_image: "{{ acr_name }}.azurecr.io/{{ project_name }}:latest"
+
+# Tags
+common_tags:
+  environment: "{{ environment }}"
+  project: "{{ project_name }}"
+  managed_by: ansible
+  created_by: automation
