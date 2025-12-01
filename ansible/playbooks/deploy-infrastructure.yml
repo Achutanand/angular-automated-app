@@ -28,7 +28,7 @@
 
     - name: Create App Service Plan
       shell: |
-        az appservice plan create --name {{ app_service_plan }} --resource-group {{ resource_group }} --is-linux --sku B1
+        az appservice plan create --name {{ app_service_plan }} --resource-group {{ resource_group }} --is-linux --sku F1
 
     - name: Create Web App
       shell: |
