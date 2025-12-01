@@ -23,9 +23,13 @@
       shell: |
         docker push {{ docker_image }}
 
-    - name: Update Container Instance
+    - name: Delete Existing Container Instance
       shell: |
-        az container create --resource-group {{ resource_group }} --name {{ web_app_name }} --image {{ docker_image }} --dns-name-label {{ web_app_name }} --ports 80 --os-type Linux --registry-login-server {{ acr_name }}.azurecr.io --registry-username {{ acr_name }} --registry-password $(az acr credential show --name {{ acr_name }} --query "passwords[0].value" -o tsv)
+        az container delete --resource-group {{ resource_group }} --name {{ web_app_name }} --yes || true
+
+    - name: Create Updated Container Instance
+      shell: |
+        az container create --resource-group {{ resource_group }} --name {{ web_app_name }} --image {{ docker_image }} --dns-name-label {{ web_app_name }} --ports 80 --os-type Linux --cpu 1 --memory 1 --registry-login-server {{ acr_name }}.azurecr.io --registry-username {{ acr_name }} --registry-password $(az acr credential show --name {{ acr_name }} --query "passwords[0].value" -o tsv)
 
     - name: Display Deployment Info
       debug:
