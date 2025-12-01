@@ -26,17 +26,9 @@
       shell: |
         az acr create --resource-group {{ resource_group }} --name {{ acr_name }} --sku Basic --admin-enabled true
 
-    - name: Create App Service Plan
+    - name: Create Container Instance
       shell: |
-        az appservice plan create --name {{ app_service_plan }} --resource-group {{ resource_group }} --is-linux --sku F1
-
-    - name: Create Web App
-      shell: |
-        az webapp create --resource-group {{ resource_group }} --plan {{ app_service_plan }} --name {{ web_app_name }} --deployment-container-image-name nginx:alpine
-
-    - name: Configure Web App Settings
-      shell: |
-        az webapp config appsettings set --resource-group {{ resource_group }} --name {{ web_app_name }} --settings WEBSITES_ENABLE_APP_SERVICE_STORAGE=false WEBSITES_PORT=80
+        az container create --resource-group {{ resource_group }} --name {{ web_app_name }} --image nginx:alpine --dns-name-label {{ web_app_name }} --ports 80
 
     - name: Display Infrastructure Info
       debug:
@@ -44,4 +36,4 @@
           - "✅ Infrastructure Created Successfully!"
           - "Resource Group: {{ resource_group }}"
           - "Container Registry: {{ acr_name }}.azurecr.io"
-          - "Web App URL: https://{{ web_app_name }}.azurewebsites.net"
+          - "Container URL: http://{{ web_app_name }}.{{ location }}.azurecontainer.io"

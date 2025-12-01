@@ -41,9 +41,9 @@ jobs:
     - name: Verify Deployment
       run: |
         sleep 60
-        curl -f https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net || exit 1
+        curl -f http://${{ env.AZURE_WEBAPP_NAME }}.eastus.azurecontainer.io || exit 1
 
     - name: Deployment Success
       run: |
         echo "🎉 Deployment completed successfully!"
-        echo "🌐 Application URL: https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"
+        echo "🌐 Application URL: http://${{ env.AZURE_WEBAPP_NAME }}.eastus.azurecontainer.io"

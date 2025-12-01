@@ -23,17 +23,13 @@
       shell: |
         docker push {{ docker_image }}
 
-    - name: Update Web App Container
+    - name: Update Container Instance
       shell: |
-        az webapp config container set --name {{ web_app_name }} --resource-group {{ resource_group }} --docker-custom-image-name {{ docker_image }}
-
-    - name: Start Web App
-      shell: |
-        az webapp start --name {{ web_app_name }} --resource-group {{ resource_group }}
+        az container create --resource-group {{ resource_group }} --name {{ web_app_name }} --image {{ docker_image }} --dns-name-label {{ web_app_name }} --ports 80 --registry-login-server {{ acr_name }}.azurecr.io --registry-username {{ acr_name }} --registry-password $(az acr credential show --name {{ acr_name }} --query "passwords[0].value" -o tsv)
 
     - name: Display Deployment Info
       debug:
         msg:
           - "🚀 Application Deployed Successfully!"
-          - "Web App URL: https://{{ web_app_name }}.azurewebsites.net"
+          - "Container URL: http://{{ web_app_name }}.eastus.azurecontainer.io"
           - "Docker Image: {{ docker_image }}"
